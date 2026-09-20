@@ -6,12 +6,9 @@ describe('Tier 4: Real-World Workload Scenarios Test Suite (S1 - S6)', () => {
   let harness: TestSimulatorHarness;
 
   beforeEach(() => {
-    // Calibrated hotend with thermal headroom for part cooling fan at 100%
-    harness = new TestSimulatorHarness({
-      thermal: {
-        hotendParams: { kHeat: 5.2, kFan: 0.003 },
-      },
-    });
+    // Deliberately no thermal overrides: these scenarios are the guard on the
+    // hotend constants the app actually ships with.
+    harness = new TestSimulatorHarness();
   });
 
   // =========================================================================
@@ -289,4 +286,30 @@ describe('Tier 4: Real-World Workload Scenarios Test Suite (S1 - S6)', () => {
     expect(harness.getState().job.currentLayer).toBeGreaterThan(0);
     expect(harness.getState().job.filamentUsedMm).toBeGreaterThan(0);
   });
+
+  // =========================================================================
+  // Scenario 7: Every bundled model prints start to finish without a fault
+  // =========================================================================
+  // Regression guard. Each sample turns the part cooling fan to 100% after the
+  // first layer, and the shipped hotend constants used to leave the block
+  // unable to hold its setpoint under that load: the heater saturated, stopped
+  // rising, and the Marlin rise watchdog halted every print partway through.
+  // Nothing in the suite ran a sample to the end, so nothing caught it.
+  for (const modelId of ['quick_pad', 'cube', 'benchy'] as const) {
+    it(`S7-${modelId}: prints ${modelId} to completion with no spurious thermal fault`, async () => {
+      await harness.loadSampleModel(modelId);
+      harness.setSpeedMultiplier(100);
+      harness.startPrint();
+
+      // Budget is generous; the loop exits as soon as the print settles.
+      for (let i = 0; i < 4000 && harness.executor.getState() === ExecutionState.RUNNING; i++) {
+        harness.advanceTime(0.25, 1 / 60);
+      }
+
+      expect(harness.thermal.isThermalRunaway()).toBe(false);
+      expect(harness.thermal.getErrorReason()).toBe('');
+      expect(harness.executor.getState()).toBe(ExecutionState.COMPLETED);
+      expect(harness.getState().job.currentLayer).toBeGreaterThan(0);
+    });
+  }
 });

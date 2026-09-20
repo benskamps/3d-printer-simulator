@@ -822,6 +822,12 @@ describe('Tier 2: Boundary & Corner Cases Test Suite (F1 - F16)', () => {
   // F16: Single-Command Runnable & Stress Boundaries
   // =========================================================================
   describe('F16: Single-Command Runnable & Stress Boundaries', () => {
+  // These assertions read the Vite output in dist/, so they only run after a
+  // production build. `npm run verify` builds first; a bare `npm test` on a
+  // fresh clone skips them rather than reporting a failure for a missing dir.
+  const DIST_BUILT = fs.existsSync(path.resolve(process.cwd(), 'dist/assets'));
+
+
     it('B16-1: processes 500 micro-segments at 100x playback speed without accumulator drift', async () => {
       harness.setSpeedMultiplier(100);
       const lines: string[] = ['G90', 'G1 F6000'];
@@ -835,13 +841,13 @@ describe('Tier 2: Boundary & Corner Cases Test Suite (F1 - F16)', () => {
       expect(harness.getNominalPosition().x).toBeCloseTo(50.0, 1);
     });
 
-    it('B16-2: verifies dist/index.html begins with valid HTML doctype', () => {
+    it.skipIf(!DIST_BUILT)('B16-2: verifies dist/index.html begins with valid HTML doctype', () => {
       const distHtml = path.resolve(process.cwd(), 'dist/index.html');
       const content = fs.readFileSync(distHtml, 'utf-8');
       expect(content.toLowerCase()).toContain('<!doctype html>');
     });
 
-    it('B16-3: verifies production JS bundle size is substantial (>100KB)', () => {
+    it.skipIf(!DIST_BUILT)('B16-3: verifies production JS bundle size is substantial (>100KB)', () => {
       const assetsDir = path.resolve(process.cwd(), 'dist/assets');
       const files = fs.readdirSync(assetsDir);
       const jsFile = files.find((f) => f.endsWith('.js'));
@@ -850,7 +856,7 @@ describe('Tier 2: Boundary & Corner Cases Test Suite (F1 - F16)', () => {
       expect(stats.size).toBeGreaterThan(100_000); // > 100KB
     });
 
-    it('B16-4: verifies production CSS bundle size is valid (>5KB)', () => {
+    it.skipIf(!DIST_BUILT)('B16-4: verifies production CSS bundle size is valid (>5KB)', () => {
       const assetsDir = path.resolve(process.cwd(), 'dist/assets');
       const files = fs.readdirSync(assetsDir);
       const cssFile = files.find((f) => f.endsWith('.css'));

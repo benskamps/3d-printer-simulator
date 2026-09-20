@@ -59,7 +59,10 @@ let htmlContent = '';
 check('dist/index.html contains mounting root and meta tags', () => {
   htmlContent = fs.readFileSync(htmlFile, 'utf-8');
   assert(htmlContent.includes('id="root"'), 'index.html missing #root mounting element');
-  assert(htmlContent.includes('<title>3D Printer Simulator</title>'), 'index.html missing page title');
+  // Substring, not an exact match: the title carries a tagline for link previews.
+  assert(/<title>[^<]*3D Printer Simulator[^<]*<\/title>/i.test(htmlContent), 'index.html missing page title');
+  assert(/<meta\s+name="description"/i.test(htmlContent), 'index.html missing meta description');
+  assert(/<link[^>]+rel="icon"/i.test(htmlContent), 'index.html missing favicon link');
   assert(htmlContent.includes('class="dark"'), 'index.html missing dark theme attribute');
 });
 
