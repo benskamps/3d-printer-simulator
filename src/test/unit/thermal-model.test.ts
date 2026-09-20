@@ -126,8 +126,26 @@ describe('ThermalModel and Safety Watchdog Unit Tests', () => {
         modelWithFan.update(0.1);
       }
 
-      // Model with fan must have cooled significantly faster
-      expect(modelWithFan.getHotend().actual).toBeLessThan(modelNoFan.getHotend().actual - 10.0);
+      // Model with fan must have cooled measurably faster
+      expect(modelWithFan.getHotend().actual).toBeLessThan(modelNoFan.getHotend().actual - 4.0);
+    });
+
+    it('should still reach normal printing setpoints with the part fan at 100%', () => {
+      // Regression: the part fan used to cost the hotend so much headroom that
+      // its saturated steady state fell below a PLA setpoint, so every print
+      // with cooling on stalled under the heater and tripped the rise watchdog.
+      for (const setpoint of [205, 240, 255]) {
+        const model = new ThermalModel({ ambientTemp: 21.0 });
+        model.setFanSpeed(1.0);
+        model.setHotendTarget(setpoint);
+        for (let t = 0; t < 6000; t++) model.update(0.1);
+
+        // Full cooling costs a few degrees of droop, as it does on real
+        // hardware, but the block must stay inside the firmware's own +/-10 C
+        // in-range band so neither safety watchdog has grounds to trip.
+        expect(model.isThermalRunaway()).toBe(false);
+        expect(model.getHotend().actual).toBeGreaterThan(setpoint - 10.0);
+      }
     });
   });
 

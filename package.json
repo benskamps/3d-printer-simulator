@@ -1,15 +1,42 @@
 {
   "name": "3d-printer-simulator",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "A 3D printer that runs in a browser tab: real G-code, Cartesian kinematics, a solved thermal model, and every way a print goes wrong.",
+  "keywords": [
+    "3d-printing",
+    "gcode",
+    "simulator",
+    "three.js",
+    "webgl",
+    "klipper",
+    "marlin",
+    "fluidd",
+    "thermal-model",
+    "kinematics"
+  ],
+  "homepage": "https://github.com/benskamps/3d-printer-simulator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benskamps/3d-printer-simulator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/benskamps/3d-printer-simulator/issues"
+  },
+  "author": "Ben Skamps (https://brokenbranch.dev)",
+  "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node src/test/smoke-test.mjs"
+    "smoke": "node src/test/smoke-test.mjs",
+    "verify": "npm run build && npm test && npm run smoke"
   },
   "dependencies": {
     "lucide-react": "^0.441.0",

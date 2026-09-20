@@ -76,7 +76,11 @@ export class ThermalModel implements IThermalModel, IThermalSubsystemBridge {
       maxTemp: 285.0,
       kHeat: 3.80,
       kCool: 0.0145,
-      kFan: 0.0095,
+      // A part-cooling fan blows across the print, not the heater block, so it
+      // costs the hotend headroom rather than control of it. These constants put
+      // the saturated steady state at ~283 C with the fan off and ~260 C with it
+      // at 100%, which keeps every normal setpoint reachable under full cooling.
+      kFan: 0.0014,
       ...options?.hotendParams,
     };
 
@@ -326,9 +330,14 @@ export class ThermalModel implements IThermalModel, IThermalSubsystemBridge {
   }
 
   private tripWatchdog(reason: string): void {
+    // Keep the first reason. M112 shutdown trips the same watchdog, so without
+    // this guard the halt that follows a fault overwrites the fault that caused
+    // it and the terminal reports the symptom instead of the cause.
+    if (!this.hasError && !this.isRunaway) {
+      this.errorReason = reason;
+    }
     this.isRunaway = true;
     this.hasError = true;
-    this.errorReason = reason;
     this.hotendPower = 0;
     this.bedPower = 0;
     this.hotendTarget = 0;
